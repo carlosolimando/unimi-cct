@@ -10,7 +10,8 @@ services:
       - "7001:7001" 
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
- 
+    networks:
+      - csapigateway
     
   cs.apigateway.ordersdatabase:
     image: postgres:alpine
@@ -23,6 +24,8 @@ services:
         - ./orders-pg-data:/var/lib/postgresql
     ports:
         - "6432:5432"
+    networks:
+      - csapigateway
 
   cs.apigateway.ordersmicroservice:
    image: ${DOCKER_REGISTRY-}csapigatewayordersmicroservice
@@ -37,7 +40,8 @@ services:
      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
    depends_on:
      - cs.apigateway.ordersdatabase
-
+   networks:
+     - csapigateway
 
 
   cs.apigateway.productsdatabase:
@@ -51,6 +55,8 @@ services:
         - ./products-pg-data:/var/lib/postgresql
     ports:
         - "5432:5432"
+    networks:
+      - csapigateway
 
   cs.apigateway.productsmicroservice:
     image: ${DOCKER_REGISTRY-}csapigatewayproductsmicroservice
@@ -65,7 +71,40 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
     depends_on:
       - cs.apigateway.productsdatabase
+    networks:
+      - csapigateway
 
+  cs.apigateway.productsmicroservice2:
+    image: ${DOCKER_REGISTRY-}csapigatewayproductsmicroservice2
+    container_name: products.api2
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.ProductsMicroservice/Dockerfile
+    ports:
+      - "5100:5100"
+      - "5101:5101" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    depends_on:
+      - cs.apigateway.productsdatabase
+    networks:
+      - csapigateway
+
+  cs.apigateway.productsmicroservice3:
+    image: ${DOCKER_REGISTRY-}csapigatewayproductsmicroservice3
+    container_name: products.api3
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.ProductsMicroservice/Dockerfile
+    ports:
+      - "5200:5200"
+      - "5201:5201" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    depends_on:
+      - cs.apigateway.productsdatabase
+    networks:
+      - csapigateway
 
 
   cs.apigateway.usersdatabase:
@@ -79,6 +118,8 @@ services:
            - ./users-pg-data:/var/lib/postgresql
        ports:
            - "4432:5432"
+       networks:
+           - csapigateway
 
   cs.apigateway.usersmicroservice:
     image: ${DOCKER_REGISTRY-}csapigatewayusersmicroservice
@@ -93,7 +134,8 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
     depends_on:
       - cs.apigateway.usersdatabase
-
+    networks:
+      - csapigateway
 
 
   cs.apigateway.pgadmin:
@@ -109,10 +151,10 @@ services:
       - cs.apigateway.usersdatabase
       - cs.apigateway.ordersdatabase
       - cs.apigateway.productsdatabase
-
     volumes:
       - ./pgadmin-data:/var/lib/pgadmin
-  
+    networks:
+      - csapigateway
 
 
   cs.apigateway.keycloak:
@@ -127,7 +169,8 @@ services:
     command: ["start-dev"]
     volumes:
       - ./keycloak-data:/opt/keycloak/data
-
+    networks:
+      - csapigateway
 
 
   cs.apigateway.dashboard:
@@ -135,3 +178,11 @@ services:
     container_name: dashboard
     ports:
      - 18888:18888
+    networks:
+      - csapigateway
+
+
+networks:
+   csapigateway:
+     name: csapigateway
+     driver: bridge 

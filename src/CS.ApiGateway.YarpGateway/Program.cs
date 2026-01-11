@@ -1,5 +1,3 @@
-using Npgsql;
-using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -35,6 +33,9 @@ builder.Services.AddOpenTelemetry()
             .AddOtlpExporter();
     });
 
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,7 +44,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+app.MapReverseProxy();
+
+//app.UseHttpsRedirection();
 
 
 app.Run();

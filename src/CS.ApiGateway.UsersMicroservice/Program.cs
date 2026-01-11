@@ -50,7 +50,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "OpenAPI V1"); });
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.MapUserEndpoints();
 
