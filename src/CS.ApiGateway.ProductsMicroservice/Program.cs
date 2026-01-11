@@ -2,7 +2,6 @@
 using CS.ApiGateway.ProductsMicroservice.Enpoints;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -10,6 +9,8 @@ using OpenTelemetry.Trace;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHealthChecks();
 
 builder.Services.AddDbContext<ProductsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("ProductsDbContext") ?? throw new InvalidOperationException("Connection string 'ProductsDbContext' not found.")));
@@ -54,5 +55,8 @@ if (app.Environment.IsDevelopment())
 //app.UseHttpsRedirection();
 
 app.MapProductEndpoints();
+
+app.MapHealthChecks("/api/products/health");
+
 
 app.Run();

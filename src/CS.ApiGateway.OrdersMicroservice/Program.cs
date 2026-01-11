@@ -10,6 +10,8 @@ using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks();
+
 builder.Services.AddDbContext<OrdersDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("OrdersDbContext") ?? throw new InvalidOperationException("Connection string 'OrdersDbContext' not found.")));
 
@@ -54,5 +56,7 @@ if (app.Environment.IsDevelopment())
 app.MapOrderEndpoints();
 
 app.MapOrderLineEndpoints();
+
+app.MapHealthChecks("/api/orders/health");
 
 app.Run();

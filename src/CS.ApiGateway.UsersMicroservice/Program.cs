@@ -2,7 +2,6 @@
 using CS.ApiGateway.UsersMicroservice.Enpoints;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -10,6 +9,8 @@ using OpenTelemetry.Trace;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHealthChecks();
 
 builder.Services.AddDbContext<UsersDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("UsersDbContext") ?? throw new InvalidOperationException("Connection string 'UsersDbContext' not found.")));
@@ -55,5 +56,7 @@ if (app.Environment.IsDevelopment())
 app.MapUserEndpoints();
 
 app.MapBasketItemEndpoints();
+
+app.MapHealthChecks("/api/users/health");
 
 app.Run();
