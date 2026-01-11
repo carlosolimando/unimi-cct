@@ -1,4 +1,4 @@
-﻿using CS.ApiGateway.ProductsMicroservice.Models;
+﻿using CS.ApiGateway.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace CS.ApiGateway.ProductsMicroservice.Data

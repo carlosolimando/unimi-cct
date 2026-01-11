@@ -21,7 +21,7 @@ namespace CS.ApiGateway.ProductsMicroservice.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CS.ApiGateway.ProductsMicroservice.Models.Product", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.Product", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

@@ -1,4 +1,4 @@
-﻿namespace CS.ApiGateway.OrdersMicroservice.Models
+﻿namespace CS.ApiGateway.Core.Models
 {
     public class Order
     {

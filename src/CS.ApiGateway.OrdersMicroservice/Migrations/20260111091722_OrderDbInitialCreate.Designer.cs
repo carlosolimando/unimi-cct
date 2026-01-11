@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CS.ApiGateway.OrdersMicroservice.Migrations
 {
     [DbContext(typeof(OrdersDbContext))]
-    [Migration("20260110164902_OrderDbInitialCreate")]
+    [Migration("20260111091722_OrderDbInitialCreate")]
     partial class OrderDbInitialCreate
     {
         /// <inheritdoc />
@@ -24,7 +24,7 @@ namespace CS.ApiGateway.OrdersMicroservice.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CS.ApiGateway.OrdersMicroservice.Models.Order", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -48,7 +48,7 @@ namespace CS.ApiGateway.OrdersMicroservice.Migrations
                     b.ToTable("Order");
                 });
 
-            modelBuilder.Entity("CS.ApiGateway.OrdersMicroservice.Models.OrderLine", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.OrderLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -79,16 +79,16 @@ namespace CS.ApiGateway.OrdersMicroservice.Migrations
                     b.ToTable("OrderLine");
                 });
 
-            modelBuilder.Entity("CS.ApiGateway.OrdersMicroservice.Models.OrderLine", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.OrderLine", b =>
                 {
-                    b.HasOne("CS.ApiGateway.OrdersMicroservice.Models.Order", null)
+                    b.HasOne("CS.ApiGateway.Core.Models.Order", null)
                         .WithMany("Products")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CS.ApiGateway.OrdersMicroservice.Models.Order", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.Order", b =>
                 {
                     b.Navigation("Products");
                 });

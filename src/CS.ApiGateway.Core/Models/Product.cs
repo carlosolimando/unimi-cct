@@ -1,4 +1,4 @@
-﻿namespace CS.ApiGateway.ProductsMicroservice.Models
+﻿namespace CS.ApiGateway.Core.Models
 {
     public class Product
     {

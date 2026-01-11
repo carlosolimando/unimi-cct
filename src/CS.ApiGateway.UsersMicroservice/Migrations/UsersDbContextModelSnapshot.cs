@@ -21,7 +21,7 @@ namespace CS.ApiGateway.UsersMicroservice.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("CS.ApiGateway.UsersMicroservice.Models.BasketItem", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.BasketItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,7 +52,7 @@ namespace CS.ApiGateway.UsersMicroservice.Migrations
                     b.ToTable("BasketItem");
                 });
 
-            modelBuilder.Entity("CS.ApiGateway.UsersMicroservice.Models.User", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -77,16 +77,16 @@ namespace CS.ApiGateway.UsersMicroservice.Migrations
                     b.ToTable("User");
                 });
 
-            modelBuilder.Entity("CS.ApiGateway.UsersMicroservice.Models.BasketItem", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.BasketItem", b =>
                 {
-                    b.HasOne("CS.ApiGateway.UsersMicroservice.Models.User", null)
+                    b.HasOne("CS.ApiGateway.Core.Models.User", null)
                         .WithMany("BasketItems")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CS.ApiGateway.UsersMicroservice.Models.User", b =>
+            modelBuilder.Entity("CS.ApiGateway.Core.Models.User", b =>
                 {
                     b.Navigation("BasketItems");
                 });

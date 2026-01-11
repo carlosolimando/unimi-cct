@@ -1,5 +1,5 @@
-﻿using CS.ApiGateway.UsersMicroservice.Data;
-using CS.ApiGateway.UsersMicroservice.Models;
+﻿using CS.ApiGateway.Core.Models;
+using CS.ApiGateway.UsersMicroservice.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 

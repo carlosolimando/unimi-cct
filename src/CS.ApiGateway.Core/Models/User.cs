@@ -1,4 +1,4 @@
-﻿namespace CS.ApiGateway.UsersMicroservice.Models
+﻿namespace CS.ApiGateway.Core.Models
 {
     public class User
     {

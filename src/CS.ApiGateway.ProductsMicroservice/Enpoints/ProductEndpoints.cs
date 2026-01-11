@@ -1,5 +1,5 @@
-﻿using CS.ApiGateway.ProductsMicroservice.Data;
-using CS.ApiGateway.ProductsMicroservice.Models;
+﻿using CS.ApiGateway.Core.Models;
+using CS.ApiGateway.ProductsMicroservice.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 namespace CS.ApiGateway.ProductsMicroservice.Enpoints;
