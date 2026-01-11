@@ -2,6 +2,7 @@
 using CS.ApiGateway.UsersMicroservice.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CS.ApiGateway.UsersMicroservice.Enpoints;
 
@@ -40,14 +41,23 @@ public static class UserEndpoints
             return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
         })
         .WithName("UpdateUser");
-
-        group.MapPost("/", async (User user, UsersDbContext db) =>
+        
+        group.MapPost("/", async (User user, ClaimsPrincipal claimsPrincipal, UsersDbContext db) =>
         {
-            db.User.Add(user);
+            var claimsDictionary = claimsPrincipal.Claims.ToDictionary(c => c.Type, c => c.Value);
+            var userFromClaims = new User
+            {
+                FirstName = claimsDictionary["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"],
+                LastName = claimsDictionary["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"],
+                UserName = claimsDictionary["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"],
+            };
+
+            db.User.Add(userFromClaims);
             await db.SaveChangesAsync();
-            return TypedResults.Created($"/api/users/{user.Id}", user);
+            return TypedResults.Created($"/api/users/{userFromClaims.Id}", userFromClaims);
         })
-        .WithName("CreateUser");
+        .WithName("CreateUser")
+        .RequireAuthorization();
 
         group.MapDelete("/{id}", async Task<Results<Ok, NotFound>> (int id, UsersDbContext db) =>
         {

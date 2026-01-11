@@ -1,14 +1,36 @@
 ﻿using CS.ApiGateway.UsersMicroservice.Data;
 using CS.ApiGateway.UsersMicroservice.Enpoints;
+using CS.ApiGateway.UsersMicroservice.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGenWithAuth(builder.Configuration);
+
+builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
+    {
+        o.RequireHttpsMetadata = false;
+        o.Audience = builder.Configuration["Authentication:Audience"];
+        o.MetadataAddress = builder.Configuration["Authentication:MetadataAddress"]!;
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = builder.Configuration["Authentication:ValidIssuer"]
+        };
+    });
+
 
 builder.Services.AddHealthChecks();
 
@@ -47,16 +69,24 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "OpenAPI V1"); });
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-
-//app.UseHttpsRedirection();
 
 app.MapUserEndpoints();
 
 app.MapBasketItemEndpoints();
 
 app.MapHealthChecks("/api/users/health");
+
+app.MapGet("/api/users/me", (ClaimsPrincipal claimsPrincipal) =>
+{
+    return claimsPrincipal.Claims.ToDictionary(c => c.Type, c => c.Value);
+}).RequireAuthorization();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
+
 
 app.Run();
