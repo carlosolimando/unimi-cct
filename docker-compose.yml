@@ -134,6 +134,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
     depends_on:
       - cs.apigateway.usersdatabase
+      - cs.apigateway.rabbitmq
     networks:
       - csapigateway
 
@@ -181,6 +182,27 @@ services:
     networks:
       - csapigateway
 
+
+  cs.apigateway.messageconsumer:
+    image: ${DOCKER_REGISTRY-}csapigatewaymessageconsumer
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.MessageConsumer/Dockerfile
+    depends_on:
+      - cs.apigateway.rabbitmq
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.rabbitmq:
+    image: rabbitmq:3.9.4-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./rabbitmq-data:/data'
+    networks:
+      - csapigateway
 
 networks:
    csapigateway:

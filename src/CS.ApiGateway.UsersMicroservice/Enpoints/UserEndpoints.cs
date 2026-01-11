@@ -2,7 +2,10 @@
 using CS.ApiGateway.UsersMicroservice.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 namespace CS.ApiGateway.UsersMicroservice.Enpoints;
 
@@ -33,15 +36,53 @@ public static class UserEndpoints
             var affected = await db.User
                 .Where(model => model.Id == id)
                 .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(m => m.Id, user.Id)
                     .SetProperty(m => m.FirstName, user.FirstName)
                     .SetProperty(m => m.LastName, user.LastName)
                     .SetProperty(m => m.UserName, user.UserName)
                     );
+
+            if (affected == 1 && user.BasketItems != null && user.BasketItems.Length > 0)
+            {
+                db.BasketItem.AddRange(user.BasketItems);
+                await db.SaveChangesAsync();
+
+                var userFromDb = await db.User.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user.Id);
+
+                if(userFromDb != null)
+                {
+                    userFromDb.BasketItems = await db.BasketItem.AsNoTracking().Where(x => x.UserId == user.Id).ToArrayAsync();
+                }
+
+                if (userFromDb != null && userFromDb.BasketItems?.Length > 0)
+                {
+                    var factory = new ConnectionFactory { HostName = "cs.apigateway.rabbitmq" };
+                    using var connection = await factory.CreateConnectionAsync();
+                    using var channel = await connection.CreateChannelAsync();
+
+                    await channel.QueueDeclareAsync(
+                    queue: "order-queue",
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null);
+
+
+                    var message = JsonSerializer.Serialize(userFromDb);
+                    var body = Encoding.UTF8.GetBytes(message);
+
+                    await channel.BasicPublishAsync(
+                                    exchange: string.Empty,
+                                    routingKey: "order-queue",
+                                    mandatory: true,
+                                    basicProperties: new BasicProperties { Persistent = true },
+                                    body: body);
+                }
+            }
+
             return affected == 1 ? TypedResults.Ok() : TypedResults.NotFound();
         })
         .WithName("UpdateUser");
-        
+
         group.MapPost("/", async (User user, ClaimsPrincipal claimsPrincipal, UsersDbContext db) =>
         {
             var claimsDictionary = claimsPrincipal.Claims.ToDictionary(c => c.Type, c => c.Value);

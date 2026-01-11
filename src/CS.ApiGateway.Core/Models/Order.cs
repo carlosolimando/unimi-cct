@@ -5,7 +5,7 @@
         public int Id { get; set; }
         public required string Code { get; set; }
         public required string User { get; set; }
-        public required OrderLine[] Products { get; set; }
+        public required List<OrderLine> Products { get; set; }
         public decimal TotalAmount { get; set; }
     }
 
