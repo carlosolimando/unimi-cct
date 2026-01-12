@@ -364,4 +364,4 @@ FodyWeavers.xsd
 /Plugins/.editorconfig
 
 #docker-builds
-*-data/src
+*-data/**
