@@ -1,0 +1,22 @@
+{
+  "id": 1,
+  "firstName": "test",
+  "lastName": "user",
+  "userName": "test-user@test.com",
+  "basketItems": [
+    {
+      "userId": 1,
+      "productId": 1,
+      "productName": "Pizza Margherita",
+      "quantity": 1,
+      "price": 25
+    },
+    {
+      "userId": 1,
+      "productId": 2,
+      "productName": "Birra moretti",
+      "quantity": 3,
+      "price": 5
+    }
+  ]
+}
