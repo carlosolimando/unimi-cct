@@ -79,7 +79,7 @@ namespace CS.ApiGateway.OrdersMicroservice.Migrations
             modelBuilder.Entity("CS.ApiGateway.Core.Models.OrderLine", b =>
                 {
                     b.HasOne("CS.ApiGateway.Core.Models.Order", null)
-                        .WithMany("Products")
+                        .WithMany("OrderLines")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -87,7 +87,7 @@ namespace CS.ApiGateway.OrdersMicroservice.Migrations
 
             modelBuilder.Entity("CS.ApiGateway.Core.Models.Order", b =>
                 {
-                    b.Navigation("Products");
+                    b.Navigation("OrderLines");
                 });
 #pragma warning restore 612, 618
         }

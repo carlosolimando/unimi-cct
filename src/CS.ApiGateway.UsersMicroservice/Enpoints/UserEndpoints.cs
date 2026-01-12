@@ -41,19 +41,19 @@ public static class UserEndpoints
                     .SetProperty(m => m.UserName, user.UserName)
                     );
 
-            if (affected == 1 && user.BasketItems != null && user.BasketItems.Length > 0)
+            if (affected == 1 && user.BasketItems != null && user.BasketItems.Count > 0)
             {
                 db.BasketItem.AddRange(user.BasketItems);
                 await db.SaveChangesAsync();
 
-                var userFromDb = await db.User.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user.Id);
+                var userFromDb = await db.User.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if(userFromDb != null)
                 {
-                    userFromDb.BasketItems = await db.BasketItem.AsNoTracking().Where(x => x.UserId == user.Id).ToArrayAsync();
+                    userFromDb.BasketItems = await db.BasketItem.AsNoTracking().Where(x => x.UserId == id).ToListAsync();
                 }
 
-                if (userFromDb != null && userFromDb.BasketItems?.Length > 0)
+                if (userFromDb != null && userFromDb.BasketItems?.Count > 0)
                 {
                     var factory = new ConnectionFactory { HostName = "cs.apigateway.rabbitmq" };
                     using var connection = await factory.CreateConnectionAsync();
