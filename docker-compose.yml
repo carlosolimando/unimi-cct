@@ -1,0 +1,210 @@
+services:
+  cs.apigateway.yarpgateway:
+    image: ${DOCKER_REGISTRY-}csapigatewayyarpgateway
+    container_name: yarp.apigateway
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.YarpGateway/Dockerfile
+    ports:
+      - "7000:7000"
+      - "7001:7001" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    networks:
+      - csapigateway
+    
+  cs.apigateway.ordersdatabase:
+    image: postgres:alpine
+    container_name: orders.database
+    environment:
+        - "POSTGRES_DB=orders"
+        - "POSTGRES_USER=dbadmin"
+        - "POSTGRES_PASSWORD=dbadmin"  
+    volumes:
+        - ./orders-pg-data:/var/lib/postgresql
+    ports:
+        - "6432:5432"
+    networks:
+      - csapigateway
+
+  cs.apigateway.ordersmicroservice:
+   image: ${DOCKER_REGISTRY-}csapigatewayordersmicroservice
+   container_name: orders.api
+   build:
+     context: .
+     dockerfile: src/CS.ApiGateway.OrdersMicroservice/Dockerfile
+   ports:
+     - "6000:6000"
+     - "6001:6001"
+   environment:
+     - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+   depends_on:
+     - cs.apigateway.ordersdatabase
+   networks:
+     - csapigateway
+
+
+  cs.apigateway.productsdatabase:
+    image: postgres:alpine
+    container_name: products.database
+    environment:
+        - "POSTGRES_DB=products"
+        - "POSTGRES_USER=dbadmin"
+        - "POSTGRES_PASSWORD=dbadmin"  
+    volumes:
+        - ./products-pg-data:/var/lib/postgresql
+    ports:
+        - "5432:5432"
+    networks:
+      - csapigateway
+
+  cs.apigateway.productsmicroservice:
+    image: ${DOCKER_REGISTRY-}csapigatewayproductsmicroservice
+    container_name: products.api
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.ProductsMicroservice/Dockerfile
+    ports:
+      - "5000:5000"
+      - "5001:5001" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    depends_on:
+      - cs.apigateway.productsdatabase
+    networks:
+      - csapigateway
+
+  cs.apigateway.productsmicroservice2:
+    image: ${DOCKER_REGISTRY-}csapigatewayproductsmicroservice2
+    container_name: products.api2
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.ProductsMicroservice/Dockerfile
+    ports:
+      - "5100:5100"
+      - "5101:5101" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    depends_on:
+      - cs.apigateway.productsdatabase
+    networks:
+      - csapigateway
+
+  cs.apigateway.productsmicroservice3:
+    image: ${DOCKER_REGISTRY-}csapigatewayproductsmicroservice3
+    container_name: products.api3
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.ProductsMicroservice/Dockerfile
+    ports:
+      - "5200:5200"
+      - "5201:5201" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    depends_on:
+      - cs.apigateway.productsdatabase
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.usersdatabase:
+       image: postgres:alpine
+       container_name: users.database
+       environment:
+           - "POSTGRES_DB=users"
+           - "POSTGRES_USER=dbadmin"
+           - "POSTGRES_PASSWORD=dbadmin"  
+       volumes:
+           - ./users-pg-data:/var/lib/postgresql
+       ports:
+           - "4432:5432"
+       networks:
+           - csapigateway
+
+  cs.apigateway.usersmicroservice:
+    image: ${DOCKER_REGISTRY-}csapigatewayusersmicroservice
+    container_name: users.api
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.UsersMicroservice/Dockerfile
+    ports:
+      - "4000:4000"
+      - "4001:4001" 
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://cs.apigateway.dashboard:18889
+    depends_on:
+      - cs.apigateway.usersdatabase
+      - cs.apigateway.rabbitmq
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.pgadmin:
+    image: dpage/pgadmin4:9.8
+    ports:
+      - 3040:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dbadmin@example.com
+      PGADMIN_DEFAULT_PASSWORD: dbadmin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    depends_on:
+      - cs.apigateway.usersdatabase
+      - cs.apigateway.ordersdatabase
+      - cs.apigateway.productsdatabase
+    volumes:
+      - ./pgadmin-data:/var/lib/pgadmin
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.keycloak:
+    image: quay.io/keycloak/keycloak:26.5.0
+    container_name: keycloak
+    ports:
+      - "2080:8080"
+    environment:
+      - "KC_BOOTSTRAP_ADMIN_USERNAME=admin"
+      - "KC_BOOTSTRAP_ADMIN_PASSWORD=admin"
+      - "KC_HEALTH_ENABLED=true"
+    command: ["start-dev"]
+    volumes:
+      - ./keycloak-data:/opt/keycloak/data
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.dashboard:
+    image: mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest
+    container_name: dashboard
+    ports:
+     - 18888:18888
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.messageconsumer:
+    image: ${DOCKER_REGISTRY-}csapigatewaymessageconsumer
+    build:
+      context: .
+      dockerfile: src/CS.ApiGateway.MessageConsumer/Dockerfile
+    depends_on:
+      - cs.apigateway.rabbitmq
+    networks:
+      - csapigateway
+
+
+  cs.apigateway.rabbitmq:
+    image: rabbitmq:3.9.4-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./rabbitmq-data:/data'
+    networks:
+      - csapigateway
+
+networks:
+   csapigateway:
+     name: csapigateway
+     driver: bridge 

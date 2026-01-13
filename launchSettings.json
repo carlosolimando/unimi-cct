@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "cs.apigateway.yarpgateway": "StartDebugging",
+        "cs.apigateway.ordersmicroservice": "StartDebugging",
+        "cs.apigateway.productsmicroservice": "StartDebugging",
+        "cs.apigateway.messageconsumer": "StartDebugging"
+      }
+    }
+  }
+}
