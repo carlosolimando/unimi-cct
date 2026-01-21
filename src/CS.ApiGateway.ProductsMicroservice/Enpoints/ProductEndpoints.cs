@@ -31,7 +31,6 @@ public static class ProductEndpoints
             var affected = await db.Product
                 .Where(model => model.Id == id)
                 .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(m => m.Id, product.Id)
                     .SetProperty(m => m.Name, product.Name)
                     .SetProperty(m => m.Description, product.Description)
                     .SetProperty(m => m.Category, product.Category)

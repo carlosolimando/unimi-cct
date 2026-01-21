@@ -1,52 +1,22 @@
 ﻿using CS.ApiGateway.Core.Models;
+using CS.ApiGateway.WebUI.ApiGateway.Products;
+using CS.ApiGateway.WebUI.ApiGateway.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace CS.ApiGateway.WebUI.Controllers
 {
-    public class ProductsController : Controller
+    public class ProductsController(IApiGatewayProductService productService, IApiGatewayUserService userService) : Controller
     {
-        private readonly List<Product> Products = new List<Product>
-            {
-                new Product
-                {
-                    Id = 1,
-                    Category = ProductCategory.Meat,
-                    Description = "desc",
-                    Name = "name",
-                    Price = 10
-                },
-                new Product
-                {
-                    Id = 2,
-                    Category = ProductCategory.Vegetable,
-                    Description = "desc",
-                    Name = "name",
-                    Price = 10
-                },
-                new Product
-                {
-                    Id = 3,
-                    Category = ProductCategory.Bread,
-                    Description = "desc",
-                    Name = "name",
-                    Price = 10
-                },
-                new Product
-                {
-                    Id = 4,
-                    Category = ProductCategory.Drink,
-                    Description = "desc",
-                    Name = "name",
-                    Price = 10
-                } };
-        public ProductsController()
-        {
-        }
+        private readonly IApiGatewayProductService productService = productService;
+        private readonly IApiGatewayUserService userService = userService;
 
         // GET: Products
         public async Task<IActionResult> Index()
         {
-            return View(this.Products);
+            var productList = await this.productService.GetAllProducts();
+            return View(productList);
         }
 
         // GET: Products/Details/5
@@ -57,7 +27,7 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var product = this.Products.First(x => x.Id == id);
+            var product = await this.productService.GetProductById(id.Value);
             if (product == null)
             {
                 return NotFound();
@@ -66,6 +36,7 @@ namespace CS.ApiGateway.WebUI.Controllers
             return View(product);
         }
 
+        [Authorize(Policy = "AdminUserType")]
         // GET: Products/Create
         public IActionResult Create()
         {
@@ -77,17 +48,19 @@ namespace CS.ApiGateway.WebUI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminUserType")]
         public async Task<IActionResult> Create([Bind("Id,Name,Description,Category,Price")] Product product)
         {
             if (ModelState.IsValid)
             {
-                this.Products.Add(product);
+                await this.productService.CreateProduct(product);
                 return RedirectToAction(nameof(Index));
             }
             return View(product);
         }
 
         // GET: Products/Edit/5
+        [Authorize(Policy = "AdminUserType")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -95,7 +68,7 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var product = this.Products.FirstOrDefault(x => x.Id == id);
+            var product = await this.productService.GetProductById(id.Value);
             if (product == null)
             {
                 return NotFound();
@@ -108,6 +81,7 @@ namespace CS.ApiGateway.WebUI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminUserType")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Category,Price")] Product product)
         {
             if (id != product.Id)
@@ -119,11 +93,13 @@ namespace CS.ApiGateway.WebUI.Controllers
             {
                 try
                 {
-                    this.Products[product.Id] = product;
+                    await this.productService.UpdateProduct(product);
                 }
                 catch (Exception)
                 {
-                    if (!ProductExists(product.Id))
+                    var product2 = await this.productService.GetProductById(product.Id);
+
+                    if (product2 == null)
                     {
                         return NotFound();
                     }
@@ -137,7 +113,37 @@ namespace CS.ApiGateway.WebUI.Controllers
             return View(product);
         }
 
+        //AddToBasket
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddToBasket([Bind("Id,Name,Description,Category,Price")] Product product)
+        {
+            var userName = HttpContext.User.Claims.FirstOrDefault(c => c.Type.Equals("preferred_username"))?.Value;
+
+            var user = string.IsNullOrWhiteSpace(userName) ? null : await this.userService.GetUserByUsername(userName);
+
+            if (user == null || product == null || !product.Price.HasValue || string.IsNullOrWhiteSpace(product.Name)) {
+                return NotFound();
+            }
+
+            var basketItem = new BasketItem
+            {
+                Price = product.Price.Value,
+                ProductName = product.Name,
+                ProductId = product.Id,
+                Quantity = 1,
+                UserId = user.Id
+            };
+
+            await this.userService.CreateBasketItem(basketItem);
+
+            return RedirectToAction("Index", "BasketItems");
+
+        }
+
+
         // GET: Products/Delete/5
+        [Authorize(Policy = "AdminUserType")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -145,7 +151,7 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var product = this.Products.FirstOrDefault(m => m.Id == id);
+            var product = await this.productService.GetProductById(id.Value);
             if (product == null)
             {
                 return NotFound();
@@ -157,20 +163,16 @@ namespace CS.ApiGateway.WebUI.Controllers
         // POST: Products/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminUserType")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var product = this.Products.FirstOrDefault(Products => Products.Id == id);
+            var product = await this.productService.GetProductById(id);
             if (product != null)
             {
-                this.Products.Remove(product);
+                await this.productService.DeleteProduct(id);
             }
 
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ProductExists(int id)
-        {
-            return this.Products.Exists(p => p.Id == id);
         }
     }
 }

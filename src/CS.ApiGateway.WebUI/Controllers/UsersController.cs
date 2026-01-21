@@ -1,20 +1,19 @@
 ﻿using CS.ApiGateway.Core.Models;
+using CS.ApiGateway.WebUI.ApiGateway.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CS.ApiGateway.WebUI.Controllers
 {
-    public class UsersController : Controller
+    [Authorize(Policy = "AdminUserType")]
+    public class UsersController(IApiGatewayUserService userService) : Controller
     {
-        public UsersController()
-        {
-        }
-
-        /*
+        private readonly IApiGatewayUserService userService = userService;
         // GET: Users
         public async Task<IActionResult> Index()
         {
-            return View(await _context.User.ToListAsync());
+            var userList = await this.userService.GetAllUsers();
+            return View(userList);
         }
 
         // GET: Users/Details/5
@@ -25,8 +24,9 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var user = await _context.User
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await this.userService.GetUserById(id.Value);
+
+
             if (user == null)
             {
                 return NotFound();
@@ -50,8 +50,7 @@ namespace CS.ApiGateway.WebUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(user);
-                await _context.SaveChangesAsync();
+                await this.userService.CreateUser(user);
                 return RedirectToAction(nameof(Index));
             }
             return View(user);
@@ -65,7 +64,7 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var user = await _context.User.FindAsync(id);
+            var user = await this.userService.GetUserById(id.Value);
             if (user == null)
             {
                 return NotFound();
@@ -89,12 +88,13 @@ namespace CS.ApiGateway.WebUI.Controllers
             {
                 try
                 {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
+                    await this.userService.UpdateUser(user);
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception)
                 {
-                    if (!UserExists(user.Id))
+                    var user2 = await this.userService.GetUserById(user.Id);
+
+                    if (user2 == null)
                     {
                         return NotFound();
                     }
@@ -116,8 +116,7 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var user = await _context.User
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await this.userService.GetUserById(id.Value);
             if (user == null)
             {
                 return NotFound();
@@ -131,20 +130,14 @@ namespace CS.ApiGateway.WebUI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var user = await _context.User.FindAsync(id);
+            var user = await this.userService.GetUserById(id);
             if (user != null)
             {
-                _context.User.Remove(user);
+                await this.userService.DeleteUser(id);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool UserExists(int id)
-        {
-            return _context.User.Any(e => e.Id == id);
-        }
-        */
     }
 }

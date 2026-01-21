@@ -1,21 +1,32 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CS.ApiGateway.Core.Models;
+using CS.ApiGateway.WebUI.ApiGateway.Users;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CS.ApiGateway.WebUI.Controllers
 {
-    public class BasketItemsController : Controller
+    public class BasketItemsController(IApiGatewayUserService userService) : Controller
     {
+        private readonly IApiGatewayUserService userService = userService;
 
-        public BasketItemsController()
-        {
-        }
-
-        /*
         // GET: BasketItems
         public async Task<IActionResult> Index()
         {
-            var cSApiGatewayWebUIContext2 = _context.BasketItem.Include(b => b.User);
-            return View(await cSApiGatewayWebUIContext2.ToListAsync());
+            var userName = HttpContext.User.Claims.FirstOrDefault(c => c.Type.Equals("preferred_username"))?.Value;
+
+            var user = string.IsNullOrWhiteSpace(userName) ? null : await this.userService.GetUserByUsername(userName);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var basketItems = await this.userService.GetAllBasketItems();
+
+            return View(string.IsNullOrWhiteSpace(userName) || basketItems == null ? [] : basketItems.Where(x => x.UserId == user.Id));
         }
+
+
 
         // GET: BasketItems/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -25,38 +36,12 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var basketItem = await _context.BasketItem
-                .Include(b => b.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var basketItem = await this.userService.GetBasketItemById(id.Value);
             if (basketItem == null)
             {
                 return NotFound();
             }
 
-            return View(basketItem);
-        }
-
-        // GET: BasketItems/Create
-        public IActionResult Create()
-        {
-            ViewData["UserId"] = new SelectList(_context.User, "Id", "FirstName");
-            return View();
-        }
-
-        // POST: BasketItems/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserId,ProductId,ProductName,Quantity,Price")] BasketItem basketItem)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(basketItem);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["UserId"] = new SelectList(_context.User, "Id", "FirstName", basketItem.UserId);
             return View(basketItem);
         }
 
@@ -68,12 +53,11 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var basketItem = await _context.BasketItem.FindAsync(id);
+            var basketItem = await this.userService.GetBasketItemById(id.Value);
             if (basketItem == null)
             {
                 return NotFound();
             }
-            ViewData["UserId"] = new SelectList(_context.User, "Id", "FirstName", basketItem.UserId);
             return View(basketItem);
         }
 
@@ -82,36 +66,36 @@ namespace CS.ApiGateway.WebUI.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserId,ProductId,ProductName,Quantity,Price")] BasketItem basketItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,ProductId,ProductName,Quantity,Price,UserId")] BasketItem basketItem)
         {
-            if (id != basketItem.Id)
+            var basketItem2 = await this.userService.GetBasketItemById(basketItem.Id);
+
+            if (id != basketItem.Id || basketItem2 == null)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(basketItem);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BasketItemExists(basketItem.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                basketItem2.Quantity = basketItem.Quantity;
+                await this.userService.UpdateBasketItem(basketItem2);
             }
-            ViewData["UserId"] = new SelectList(_context.User, "Id", "FirstName", basketItem.UserId);
-            return View(basketItem);
+            catch (Exception)
+            {
+
+                if (basketItem2 == null)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return RedirectToAction(nameof(Index));
         }
+
+
 
         // GET: BasketItems/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -121,9 +105,7 @@ namespace CS.ApiGateway.WebUI.Controllers
                 return NotFound();
             }
 
-            var basketItem = await _context.BasketItem
-                .Include(b => b.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var basketItem = await this.userService.GetBasketItemById(id.Value);
             if (basketItem == null)
             {
                 return NotFound();
@@ -137,20 +119,60 @@ namespace CS.ApiGateway.WebUI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var basketItem = await _context.BasketItem.FindAsync(id);
-            if (basketItem != null)
+            var backetItem = await this.userService.GetBasketItemById(id);
+            if (backetItem != null)
             {
-                _context.BasketItem.Remove(basketItem);
+                await this.userService.DeleteBasketItem(id);
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BasketItemExists(int id)
+        // GET: Purchase
+        public async Task<IActionResult> Purchase()
         {
-            return _context.BasketItem.Any(e => e.Id == id);
+            var userName = HttpContext.User.Claims.FirstOrDefault(c => c.Type.Equals("preferred_username"))?.Value;
+
+            var user = string.IsNullOrWhiteSpace(userName) ? null : await this.userService.GetUserByUsername(userName);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+
+                var basketItems = await this.userService.GetAllBasketItems();
+
+                if (string.IsNullOrWhiteSpace(userName) || basketItems == null)
+                    return NotFound();
+
+                user.BasketItems = [.. basketItems.Where(x => x.UserId == user.Id)];
+
+                await this.userService.UpdateUser(user);
+
+                foreach (var basketItem in basketItems)
+                {
+                    await this.userService.DeleteBasketItem(basketItem.Id);
+                }
+            }
+            catch (Exception)
+            {
+                var user2 = await this.userService.GetUserById(user.Id);
+
+                if (user2 == null)
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction("Index", "Orders");
+
         }
-        */
     }
 }
