@@ -19,7 +19,8 @@ public static class UserEndpoints
         {
             return await db.User.ToListAsync();
         })
-        .WithName("GetAllUsers");
+        .WithName("GetAllUsers")
+        .RequireAuthorization();
 
         group.MapGet("/{id}", async Task<Results<Ok<User>, NotFound>> (int id, UsersDbContext db) =>
         {
