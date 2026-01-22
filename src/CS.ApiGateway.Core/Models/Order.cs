@@ -1,4 +1,6 @@
-﻿namespace CS.ApiGateway.Core.Models
+﻿using System.Text.Json.Serialization;
+
+namespace CS.ApiGateway.Core.Models
 {
     public class Order
     {

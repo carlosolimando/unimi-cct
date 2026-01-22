@@ -9,7 +9,6 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,10 +78,6 @@ app.MapBasketItemEndpoints();
 
 app.MapHealthChecks("/api/users/health");
 
-app.MapGet("/api/users/me", (ClaimsPrincipal claimsPrincipal) =>
-{
-    return claimsPrincipal.Claims.ToDictionary(c => c.Type, c => c.Value);
-}).RequireAuthorization();
 
 app.UseAuthentication();
 

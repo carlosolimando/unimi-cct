@@ -12,13 +12,14 @@ public static class OrderEndpoints
 
         group.MapGet("/", async (OrdersDbContext db) =>
         {
-            return await db.Order.ToListAsync();
+            var orders = await db.Order.ToListAsync();
+            return orders;
         })
         .WithName("GetAllOrders");
 
         group.MapGet("/{id}", async Task<Results<Ok<Order>, NotFound>> (int id, OrdersDbContext db) =>
         {
-            return await db.Order.AsNoTracking()
+            return await db.Order.Include(o => o.OrderLines).AsNoTracking()
                 .FirstOrDefaultAsync(model => model.Id == id)
                 is Order model
                     ? TypedResults.Ok(model)
@@ -31,7 +32,6 @@ public static class OrderEndpoints
             var affected = await db.Order
                 .Where(model => model.Id == id)
                 .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(m => m.Id, order.Id)
                     .SetProperty(m => m.Code, order.Code)
                     .SetProperty(m => m.User, order.User)
                     .SetProperty(m => m.TotalAmount, order.TotalAmount)
@@ -82,7 +82,6 @@ public static class OrderEndpoints
             var affected = await db.OrderLine
                 .Where(model => model.Id == id)
                 .ExecuteUpdateAsync(setters => setters
-                  .SetProperty(m => m.Id, orderLine.Id)
                   .SetProperty(m => m.LineNumber, orderLine.LineNumber)
                   .SetProperty(m => m.OrderId, orderLine.OrderId)
                   .SetProperty(m => m.Product, orderLine.Product)

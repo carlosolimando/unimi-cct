@@ -15,7 +15,7 @@ namespace CS.ApiGateway.MessageConsumer
         private IChannel? channel;
         private readonly ILogger logger;
         private readonly ConnectionFactory? connectionFactory;
-
+        private static int ordercounter = 1;
         public Worker(ILogger<Worker> logger, IConfiguration configuration)
         {
             this.logger = logger;
@@ -56,9 +56,10 @@ namespace CS.ApiGateway.MessageConsumer
 
                 if (userBasket != null)
                 {
+                    ++ordercounter;
                     var order = new Order
                     {
-                        Code = $"ORD-{DateTime.UtcNow.Date}",
+                        Code = $"ORD-{DateTime.UtcNow.Date:ddMMyyyy}-{ordercounter}",
                         User = userBasket.UserName,
                         TotalAmount = userBasket.BasketItems.Sum(x => x.Price * x.Quantity),
                         OrderLines = userBasket.BasketItems.Select((x, i) => new OrderLine
@@ -75,9 +76,9 @@ namespace CS.ApiGateway.MessageConsumer
                         client.DefaultRequestHeaders.ConnectionClose = true; //Set KeepAlive to false                
                         var serializedData = new StringContent(JsonSerializer.Serialize(order), Encoding.UTF8, "application/json");
 
-                        var httpResponse = client.PostAsync(ordersMicroserviceUrl, serializedData).Result; //Make sure it is synchonrous
+                        var httpResponse = client.PostAsync(ordersMicroserviceUrl, serializedData).Result; 
 
-                        var responseString = httpResponse.Content.ReadAsStringAsync().Result; //Make sure it is synchonrous
+                        var responseString = httpResponse.Content.ReadAsStringAsync().Result;
                     }
                 }
 

@@ -19,7 +19,8 @@ public static class UserEndpoints
         {
             return await db.User.ToListAsync();
         })
-        .WithName("GetAllUsers");
+        .WithName("GetAllUsers")
+        .RequireAuthorization();
 
         group.MapGet("/{id}", async Task<Results<Ok<User>, NotFound>> (int id, UsersDbContext db) =>
         {
@@ -43,8 +44,8 @@ public static class UserEndpoints
 
             if (affected == 1 && user.BasketItems != null && user.BasketItems.Count > 0)
             {
-                db.BasketItem.AddRange(user.BasketItems);
-                await db.SaveChangesAsync();
+                //db.BasketItem.AddRange(user.BasketItems);
+                //await db.SaveChangesAsync();
 
                 var userFromDb = await db.User.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
@@ -85,7 +86,7 @@ public static class UserEndpoints
 
         group.MapPost("/", async (User user, ClaimsPrincipal claimsPrincipal, UsersDbContext db) =>
         {
-            var claimsDictionary = claimsPrincipal.Claims.ToDictionary(c => c.Type, c => c.Value);
+            var claimsDictionary = claimsPrincipal.Claims.GroupBy(c => c.Type, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.Last().Value, StringComparer.OrdinalIgnoreCase);
             var userFromClaims = new User
             {
                 FirstName = claimsDictionary["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"],
@@ -134,7 +135,6 @@ public static class UserEndpoints
             var affected = await db.BasketItem
                 .Where(model => model.Id == id)
                 .ExecuteUpdateAsync(setters => setters
-                  .SetProperty(m => m.Id, basketItem.Id)
                   .SetProperty(m => m.UserId, basketItem.UserId)
                   .SetProperty(m => m.ProductId, basketItem.ProductId)
                   .SetProperty(m => m.ProductName, basketItem.ProductName)
